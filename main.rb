@@ -23,7 +23,7 @@ post %r{/forwards/(\d+)/add} do |vmid|
     data = JSON.parse request.body.read
     next 400, "" unless data.is_a? Array
     data.map do |item|
-      IPtables.add item["src"], item["host"], item["port"], vmid: item["vmid"]
+      IPtables.add item["src"], item["host"], item["port"], vmid: vmid
     end.to_json
   ensure
     IPtables.save
