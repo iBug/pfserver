@@ -1,10 +1,14 @@
+#!/usr/bin/ruby
+
 require 'sinatra'
 require 'json'
-require 'iptables'
+require './iptables'
 
 set :port, 1024
 
-get '/' { "taoky strong\n" }
+get '/' do
+  "taoky strong\n"
+end
 
 get %r{/forwards/(\d+)} do |vmid|
   vmid = vmid.to_i
@@ -18,7 +22,7 @@ post %r{/forwards/(\d+)/add} do |vmid|
   data = JSON.parse request.body.read
   next 400, "" unless data.is_a? Array
   data.map do |item|
-    IPtables.add item["src"], item["host"], item["port"], item.fetch("vmid", nil)
+    IPtables.add item["src"], item["host"], item["port"], vmid: item["vmid"]
   end.to_json
 end
 
@@ -38,8 +42,14 @@ post %r{/forwards/(\d+)/delete} do |vmid|
   end.to_json
 end
 
+post "/flush" do
+  IPtables.flush
+  ""
+end
+
 not_found do
   body ""
 end
 
-IPtables.reset!
+IPtables.load
+IPtables.flush

@@ -12,13 +12,13 @@ def iptables *args
 end
 
 module IPtables
-  @@table = JSON.parse File.read DATA_FILE
+  @@table = {}
   class << self
     def exist? src
       @@table.key? src
     end
 
-    def select src = nil, host = nil, port = nil, vmid = nil
+    def select src: nil, host: nil, port: nil, vmid: nil
       @@table.select do |t_src, (t_host, t_port, t_vmid)|
         (src.nil? || src == t_src) &&
         (host.nil? || host == t_host) &&
@@ -27,15 +27,16 @@ module IPtables
       end
     end
 
-    def add src, host, port, vmid = nil
+    def add src, host, port, vmid: nil
       return false if exist? src
       iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
         %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
       @@table[src] = [host, port, vmid]
+      p @@table
       true
     end
 
-    def delete src = nil, host = nil, port = nil, vmid = nil
+    def delete src: nil, host: nil, port: nil, vmid: nil
       @@table.reject! do |t_src, (t_host, t_port, t_vmid)|
         if (src.nil? || src == t_src) &&
           (host.nil? || host == t_host) &&
@@ -52,12 +53,12 @@ module IPtables
       @@table.clear
     end
 
-    def flush
+    def reset
       iptables %w{-t nat -F VLAB_STUDENT}
     end
 
-    def reset!
-      flush
+    def flush
+      reset
       @@table.each do |src, (host, port, vmid)|
         iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
           %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
@@ -69,7 +70,7 @@ module IPtables
     end
 
     def load
-      @@table = JSON.parse File.read DATA_FILE
+      @@table = JSON.parse File.read DATA_FILE if File.file? DATA_FILE
     end
 
     def save
