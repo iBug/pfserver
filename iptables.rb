@@ -2,6 +2,8 @@ require 'sinatra'
 require 'json'
 
 DATA_FILE = "data.json"
+PORT_START = 10001
+PORT_END = 29999
 
 def iptables *args
   if Sinatra::Base.production?
@@ -16,7 +18,7 @@ module IPtables
   @@table = {}
   class << self
     def exist? src
-      @@table.key? src
+      src.nil? || @@table.key? src
     end
 
     def select src: nil, host: nil, port: nil, vmid: nil
@@ -30,6 +32,7 @@ module IPtables
 
     def add src, host, port, vmid: nil
       return if exist? src
+      src ||= next_port
       if iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
           %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
         @@table[src] = [host, port, vmid]
@@ -70,6 +73,13 @@ module IPtables
 
     def length
       @@table.length
+    end
+
+    def next_port
+      (PORT_START..PORT_END).each do |port|
+        return port unless exist? port
+      end
+      fail "No port available"
     end
 
     def load

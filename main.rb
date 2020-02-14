@@ -52,11 +52,14 @@ end
 
 post "/flush" do
   begin
-    IPtables.flush
-    ""
+    IPtables.flush.to_s
   ensure
     IPtables.save
   end
+end
+
+get "/nextport" do
+  IPtables.next_port.to_s
 end
 
 not_found do
