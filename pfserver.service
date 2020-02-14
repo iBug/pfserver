@@ -6,6 +6,7 @@ Description=Port forwarding manager server
 Type=simple
 WorkingDirectory=/root/pfserver
 ExecStart=/usr/local/bin/bundle exec ruby main.rb
+Environment=APP_ENV=production
 
 [Install]
 WantedBy=multi-user.target
