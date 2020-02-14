@@ -1,0 +1,11 @@
+# vim: set filetype=systemd:
+[Unit]
+Description=Port forwarding manager server
+
+[Service]
+Type=simple
+WorkingDirectory=/root/pfserver
+ExecStart=/usr/local/bin/bundle exec ruby main.rb
+
+[Install]
+WantedBy=multi-user.target

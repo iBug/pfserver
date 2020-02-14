@@ -1,22 +1,45 @@
 require 'sinatra'
 require 'json'
+require 'iptables'
 
 set :port, 1024
 
-DATA_FILE = "data.json"
+get '/' { "taoky strong\n" }
 
-def load_table
-  $table ||= JSON.parse File.read DATA_FILE
+get %r{/forwards/(\d+)} do |vmid|
+  vmid = vmid.to_i
+  IPtables.select(vmid: vmid).map do |src, (host, port, vmid)|
+    {:src => src, :host => host, :port => port}
+  end.to_json
 end
 
-def save_table
-  File.open DATA_FILE, 'w' do |f|
-    f.write JSON.dump $table
-  end
+post %r{/forwards/(\d+)/add} do |vmid|
+  vmid = vmid.to_i
+  data = JSON.parse request.body.read
+  next 400, "" unless data.is_a? Array
+  data.map do |item|
+    IPtables.add item["src"], item["host"], item["port"], item.fetch("vmid", nil)
+  end.to_json
 end
 
-load_table
-
-get '/' do
-  "taoky strong\n"
+post %r{/forwards/(\d+)/delete} do |vmid|
+  vmid = vmid.to_i
+  data = JSON.parse request.body.read
+  case data
+  when Array
+    data.map do |item|
+      src = item.fetch("src", nil)
+      host = item.fetch("host", nil)
+      port = item.fetch("port", nil)
+      IPtables.delete src, host, port, vmid
+    end
+  else
+    IPtables.delete vmid: vmid
+  end.to_json
 end
+
+not_found do
+  body ""
+end
+
+IPtables.reset!
