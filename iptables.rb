@@ -5,7 +5,7 @@ DATA_FILE = "data.json"
 PORT_START = 10001
 PORT_END = 29999
 
-def iptables *args
+def iptables args
   if Sinatra::Base.production?
     system "iptables", *args
   else
