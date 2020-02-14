@@ -36,6 +36,16 @@ module IPtables
     end
 
     def delete src = nil, host = nil, port = nil, vmid = nil
+      @@table.reject! do |t_src, (t_host, t_port, t_vmid)|
+        if (src.nil? || src == t_src) &&
+          (host.nil? || host == t_host) &&
+          (port.nil? || port == t_port) &&
+          (vmid.nil? || vmid == t_vmid)
+          iptables %w{-t nat -D VLAB_STUDENT -p tcp -m tcp --dport} + [t_src.to_s] +
+            %w{-j DNAT --to-destination} + ["#{t_host}:#{t_port}"]
+          true
+        end
+      end
     end
 
     def clear
