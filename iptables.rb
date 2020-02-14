@@ -18,7 +18,7 @@ module IPtables
   @@table = {}
   class << self
     def exist? src
-      src.nil? || @@table.key? src
+      src.nil? || @@table.key?(src)
     end
 
     def select src: nil, host: nil, port: nil, vmid: nil
