@@ -20,7 +20,7 @@ end
 post %r{/forwards/(\d+)/add} do |vmid|
   begin
     vmid = vmid.to_i
-    data = JSON.parse request.body.read
+    data = JSON.parse(request.body.read || "null")
     next 400, "" unless data.is_a? Array
     data.map do |item|
       IPtables.add item["src"], item["host"], item["port"], vmid: vmid
@@ -33,7 +33,7 @@ end
 post %r{/forwards/(\d+)/delete} do |vmid|
   begin
     vmid = vmid.to_i
-    data = JSON.parse request.body.read
+    data = JSON.parse(request.body.read || "null")
     case data
     when Array
       data.map do |item|

@@ -51,7 +51,7 @@ module IPtables
             %w{-j DNAT --to-destination} + ["#{t_host}:#{t_port}"]
         end
       end
-      @@table.length - before_count
+      before_count - @@table.length
     end
 
     def clear
