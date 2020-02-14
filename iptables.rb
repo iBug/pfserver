@@ -8,6 +8,7 @@ def iptables *args
     system "iptables", *args
   else
     puts "iptables #{args.join ' '}"
+    true
   end
 end
 
@@ -28,15 +29,16 @@ module IPtables
     end
 
     def add src, host, port, vmid: nil
-      return false if exist? src
-      iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
-        %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
-      @@table[src] = [host, port, vmid]
-      p @@table
-      true
+      return if exist? src
+      if iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
+          %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
+        @@table[src] = [host, port, vmid]
+        src
+      end
     end
 
     def delete src: nil, host: nil, port: nil, vmid: nil
+      before_count = @@table.length
       @@table.reject! do |t_src, (t_host, t_port, t_vmid)|
         if (src.nil? || src == t_src) &&
           (host.nil? || host == t_host) &&
@@ -44,9 +46,9 @@ module IPtables
           (vmid.nil? || vmid == t_vmid)
           iptables %w{-t nat -D VLAB_STUDENT -p tcp -m tcp --dport} + [t_src.to_s] +
             %w{-j DNAT --to-destination} + ["#{t_host}:#{t_port}"]
-          true
         end
       end
+      @@table.length - before_count
     end
 
     def clear
@@ -59,10 +61,11 @@ module IPtables
 
     def flush
       reset
-      @@table.each do |src, (host, port, vmid)|
+      @@table.select! do |src, (host, port, vmid)|
         iptables %w{-t nat -A VLAB_STUDENT -p tcp -m tcp --dport} + [src.to_s] +
           %w{-j DNAT --to-destination} + ["#{host}:#{port}"]
       end
+      length
     end
 
     def length
@@ -71,11 +74,14 @@ module IPtables
 
     def load
       @@table = JSON.parse File.read DATA_FILE if File.file? DATA_FILE
+      @@table.transform_keys! do |key|
+        key.to_i
+      end
     end
 
     def save
       File.open DATA_FILE, 'w' do |f|
-        f.write JSON.dump $table
+        f.write JSON.generate @@table
       end
     end
   end

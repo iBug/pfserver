@@ -18,33 +18,45 @@ get %r{/forwards/(\d+)} do |vmid|
 end
 
 post %r{/forwards/(\d+)/add} do |vmid|
-  vmid = vmid.to_i
-  data = JSON.parse request.body.read
-  next 400, "" unless data.is_a? Array
-  data.map do |item|
-    IPtables.add item["src"], item["host"], item["port"], vmid: item["vmid"]
-  end.to_json
+  begin
+    vmid = vmid.to_i
+    data = JSON.parse request.body.read
+    next 400, "" unless data.is_a? Array
+    data.map do |item|
+      IPtables.add item["src"], item["host"], item["port"], vmid: item["vmid"]
+    end.to_json
+  ensure
+    IPtables.save
+  end
 end
 
 post %r{/forwards/(\d+)/delete} do |vmid|
-  vmid = vmid.to_i
-  data = JSON.parse request.body.read
-  case data
-  when Array
-    data.map do |item|
-      src = item.fetch("src", nil)
-      host = item.fetch("host", nil)
-      port = item.fetch("port", nil)
-      IPtables.delete src, host, port, vmid
-    end
-  else
-    IPtables.delete vmid: vmid
-  end.to_json
+  begin
+    vmid = vmid.to_i
+    data = JSON.parse request.body.read
+    case data
+    when Array
+      data.map do |item|
+        src = item.fetch("src", nil)
+        host = item.fetch("host", nil)
+        port = item.fetch("port", nil)
+        IPtables.delete src, host, port, vmid
+      end
+    else
+      IPtables.delete vmid: vmid
+    end.to_json
+  ensure
+    IPtables.save
+  end
 end
 
 post "/flush" do
-  IPtables.flush
-  ""
+  begin
+    IPtables.flush
+    ""
+  ensure
+    IPtables.save
+  end
 end
 
 not_found do
