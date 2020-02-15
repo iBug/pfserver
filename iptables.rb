@@ -83,10 +83,8 @@ module IPtables
     end
 
     def load
-      @@table = JSON.parse File.read DATA_FILE if File.file? DATA_FILE
-      @@table.transform_keys! do |key|
-        key.to_i
-      end
+      return unless File.file? DATA_FILE
+      @@table = JSON.parse(File.read DATA_FILE).transform_keys &:to_i
     end
 
     def save
