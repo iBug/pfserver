@@ -76,7 +76,7 @@ module IPtables
     end
 
     def next_port
-      (PORT_START..PORT_END).each do |port|
+      (PORT_START..PORT_END).to_a.shuffle!.each do |port|
         return port unless exist? port
       end
       fail "No port available"
