@@ -15,18 +15,43 @@ def iptables args
 end
 
 module IPtables
+  class Item
+    attr_accessor :host, :port, :vmid, :enabled
+
+    def initialize(host, port, vmid, enabled)
+      # Source port is external
+      @host, @port, @vmid, @enabled = host, port, vmid, enabled
+    end
+
+    def select host: nil, port: nil, vmid: nil, enabled: nil
+    end
+
+    def to_json(state = nil)
+      [@host, @port, @vmid, @enabled].to_json
+    end
+
+    def self.from_json json
+      self.new *JSON.load(json)
+    end
+  end
+
   @@table = {}
   class << self
     def exist? src
       !src.nil? && @@table.key?(src)
     end
 
-    def select src: nil, host: nil, port: nil, vmid: nil
-      @@table.select do |t_src, (t_host, t_port, t_vmid)|
+    def enabled? src
+      !src.nil? && @@table.key?(src) && @@table[src][3]
+    end
+
+    def select src: nil, host: nil, port: nil, vmid: nil, enabled: nil
+      @@table.select do |t_src, (t_host, t_port, t_vmid, t_enabled)|
         (src.nil? || src == t_src) &&
         (host.nil? || host == t_host) &&
         (port.nil? || port == t_port) &&
-        (vmid.nil? || vmid == t_vmid)
+        (vmid.nil? || vmid == t_vmid) &&
+        (enabled.nil? || enabled == t_enabled)
       end
     end
 
